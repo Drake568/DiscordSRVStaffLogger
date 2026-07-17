@@ -1,4 +1,4 @@
-# StaffLogger
+# DiscordSRVStaffLogger
 
 A lightweight Paper plugin that watches four sensitive **staff actions** and posts a record
 of each into a Discord channel (through DiscordSRV). No log file, no database — Discord is the
@@ -8,10 +8,13 @@ only sink.
 
 | # | Action | How it's detected |
 |---|--------|-------------------|
-| 1 | A staff member **bans** a player | LiteBans API (`Events.Listener.entryAdded`) — structured staff/target/reason/duration, logged exactly once |
-| 2 | A staff member runs a **CoreProtect rollback** | `/co rollback` command (configurable bases/subcommands) |
-| 3 | A staff member **enchants** an item | `/enchant` command |
-| 4 | A staff member **adds/removes items from another player's inventory** | `/give` & `/clear` commands (only when targeting *another* player) **and** live edits through the InvSee++ GUI (net add/remove per session) |
+| 1 | A staff member **bans** or **unbans** a player | LiteBans API (`entryAdded` / `entryRemoved`) — structured staff/target/reason/duration, logged exactly once |
+| 2 | A staff member runs a **CoreProtect rollback / undo** | `/co rollback`, `/co rb`, `/co undo` (configurable bases/subcommands) |
+| 3 | A staff member **enchants** an item | `/enchant`, and Enchants Squared `/es enchant\|give\|remove` |
+| 4 | A staff member **adds/removes items from another player's inventory** | `/give` & `/clear` commands (only when targeting *another* player) **and** live edits through the InvSee++ GUI (net add/remove per session, including item name/lore/enchants) |
+
+You can also log **any extra command** generically via the `commands.watch` list in `config.yml`.
+Failed no-permission command attempts are not logged (configurable per action).
 
 ## Requirements
 
@@ -37,7 +40,7 @@ This targets Paper 1.21, whose API is compiled to **Java 21 bytecode**, so you n
 mvn clean package
 ```
 
-The built jar is `target/StaffLogger-1.0.0.jar`. Drop it in your server's `plugins/` folder.
+The built jar is `target/DiscordSRVStaffLogger-1.0.0.jar`. Drop it in your server's `plugins/` folder.
 
 > During the build you'll see a couple of `[ERROR]`/`[WARNING]` lines about
 > `invsee-plus-plus_common`'s `systemPath` for `BungeePerms`/`UltraPermissionsAPI`. These come
@@ -48,44 +51,89 @@ The built jar is `target/StaffLogger-1.0.0.jar`. Drop it in your server's `plugi
 > LiteBans API `0.6.1`, InvSee++ `0.31.1-SNAPSHOT`). Bump them there if needed; the InvSee++
 > and Paper artifacts come from snapshot repos.
 
-## Configuration
+## Setup
 
-### 1. Point StaffLogger at a Discord channel (via DiscordSRV)
-StaffLogger sends through DiscordSRV, so you map the channel in **DiscordSRV's** `config.yml`
-under `Channels:` (key = a name you choose, value = the Discord channel ID):
+Do these in order on your Paper 1.21 server.
+
+### 1. Install the plugins
+Put each plugin **jar directly in `plugins/`** — **not** inside a subfolder. A folder like
+`plugins/DiscordSRV/` is only the plugin's *data/config* directory; a jar placed there will not
+load. (This is the most common setup mistake — the plugin appears "installed" but never shows in
+`/plugins`.)
+
+- **DiscordSRV** — required for anything to be posted.
+- **LiteBans** — for ban/unban logging.
+- **InvSeePlusPlus (InvSee++)** — for GUI inventory-edit logging.
+- **CoreProtect**, **EssentialsX**, **Enchants Squared** — the plugins whose commands are watched
+  (no build dependency; only needed if you use those features).
+- **DiscordSRVStaffLogger** — build it (see above) and drop `DiscordSRVStaffLogger-1.0.0.jar` in.
+
+Restart the server (a full stop/start, not `/reload`) and run `/plugins` to confirm each is
+loaded (green). DiscordSRVStaffLogger logs a line per integration on enable, e.g.
+`Hooked into LiteBans - ban/unban logging active.`
+
+### 2. Set up DiscordSRV (bot + connection)
+If DiscordSRV isn't already running, follow the official guide to create the bot, invite it, and
+connect it: **https://docs.discordsrv.com/installation/initial-setup/#install-the-plugin**.
+When it's working you'll see `DiscordSRV is ready` (or a "connected" line) in the console. Nothing
+DiscordSRVStaffLogger sends will appear until DiscordSRV is connected.
+
+### 3. Point DiscordSRVStaffLogger at a Discord channel
+DiscordSRVStaffLogger posts through DiscordSRV, so the target channel is mapped in **DiscordSRV's own**
+`config.yml` (`plugins/DiscordSRV/config.yml`) under `Channels:` — key is a name you choose, value
+is the Discord channel ID (enable Discord Developer Mode, right-click the channel → *Copy Channel ID*):
 ```yaml
 Channels: {"global": "1111111111", "staff-log": "2222222222"}
 ```
-Then in StaffLogger's `config.yml` set the matching name:
+Then set the matching name in **DiscordSRVStaffLogger's** `config.yml` (`plugins/DiscordSRVStaffLogger/config.yml`):
 ```yaml
 discord:
   channel-name: "staff-log"
 ```
-Make sure the DiscordSRV bot has **View Channel**, **Send Messages**, and **Embed Links** in
-that channel.
+Make sure the DiscordSRV bot has **View Channel**, **Send Messages**, and **Embed Links** in that
+channel. If the name isn't mapped, DiscordSRVStaffLogger warns
+`DiscordSRV has no channel mapped to "staff-log"...` and skips — a clear signal to fix the mapping.
 
-### 2. Make LiteBans the ban authority (for exactly-once ban logging)
-Ban logging reads LiteBans' events, which only fire for bans that go through LiteBans. If
-EssentialsX is also installed, disable its ban commands (`/ban`, `/tempban`, `/banip`) — e.g.
-via an EssentialsX command override or by denying the `essentials.ban*` permissions — so every
-ban flows through LiteBans. (This is the standard LiteBans setup.)
+### 4. Make LiteBans the ban authority (for exactly-once ban logging)
+Ban logging reads LiteBans' events, which only fire for bans that go through LiteBans. With
+EssentialsX also installed, disable its ban commands so every ban/unban flows through LiteBans —
+in `plugins/Essentials/config.yml`:
+```yaml
+disabled-commands:
+- ban
+- unban
+- banip
+- unbanip
+- tempban
+```
+Then full-restart and verify LiteBans owns `/ban` (compare `/ban` and `/litebans:ban` output).
+(This is the standard LiteBans setup.)
 
-### 3. Toggles & command lists
-`config.yml` lets you enable/disable each action and edit the command bases/aliases matched for
-rollbacks, enchants, and give/clear (add your server's custom aliases there).
+### 5. Tune DiscordSRVStaffLogger's config
+`plugins/DiscordSRVStaffLogger/config.yml` lets you:
+- enable/disable each action (`log.*`),
+- set the permission nodes that gate each command action (`commands.permissions.*`),
+- edit the matched command bases/subcommands/aliases (`commands.rollback`, `commands.enchant`, …),
+- add extra commands to log generically (`commands.watch`).
+
+> **Editing an existing config:** `config.yml` is only generated on first run, so new options
+> added in an update won't appear in your existing file automatically. Add the keys you want by
+> hand, or delete `config.yml` and restart to regenerate the fully-commented default.
 
 ## Verifying end-to-end
 
-On a Paper 1.21 test server with DiscordSRV, LiteBans, InvSee++, EssentialsX and CoreProtect
-installed and the channel mapped, run each and confirm a single Discord embed appears:
+On a Paper 1.21 test server with DiscordSRV, LiteBans, InvSee++, EssentialsX, CoreProtect and
+Enchants Squared installed and the channel mapped, run each and confirm a single Discord embed appears:
 
 - `/ban <player> <reason>` → **Player Banned** (staff / target / reason / duration).
-- `/co rollback u:<player> t:1h` → **CoreProtect Rollback**.
-- `/enchant <player> sharpness 5` → **Item Enchanted**.
+- `/unban <player>` → **Player Unbanned**.
+- `/co rollback u:<player> t:1h` → **CoreProtect Rollback**; `/co undo` → **CoreProtect Undo**.
+- `/enchant <player> sharpness 5` → **Item Enchanted**; `/es enchant …` → **Item Enchanted**.
 - `/give <otherplayer> diamond 64` → **Inventory Changed (command)**; `/give <yourself> ...`
   or self-give → **no** post.
 - `/invsee <player>`, add or remove an item, close the GUI → **Inventory Edited via InvSee**
-  showing the net items; opening and closing without changes → **no** post.
+  showing the net items (with name/lore/enchants); opening and closing without changes → **no** post.
+- As a **non-op with no permission**, run one of the tracked commands → **no** post.
 
 Watch the server console for guard warnings if DiscordSRV / the channel / LiteBans / InvSee++
 are missing.

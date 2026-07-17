@@ -1,4 +1,4 @@
-package com.stafflogger;
+package com.discordsrvstafflogger;
 
 import github.scarsz.discordsrv.DiscordSRV;
 import github.scarsz.discordsrv.dependencies.jda.api.EmbedBuilder;
@@ -31,12 +31,12 @@ public final class DiscordNotifier {
     public static final Color INVENTORY_COLOR = new Color(0xF1C40F); // gold
     public static final Color WATCH_COLOR     = new Color(0x5865F2); // blurple (custom watched commands)
 
-    private final StaffLogger plugin;
+    private final DiscordSRVStaffLogger plugin;
     private final String channelName;
     private boolean warnedMissingDiscordSRV = false;
     private boolean warnedMissingChannel = false;
 
-    public DiscordNotifier(StaffLogger plugin, String channelName) {
+    public DiscordNotifier(DiscordSRVStaffLogger plugin, String channelName) {
         this.plugin = plugin;
         this.channelName = channelName;
     }
@@ -87,10 +87,10 @@ public final class DiscordNotifier {
             MessageEmbed built = embed.build();
             channel.sendMessageEmbeds(built).queue(
                     null,
-                    error -> plugin.getLogger().warning("Failed to deliver StaffLogger message to Discord: " + error.getMessage()));
+                    error -> plugin.getLogger().warning("Failed to deliver DiscordSRVStaffLogger message to Discord: " + error.getMessage()));
         } catch (Throwable t) {
             // Never let logging break the action that triggered it.
-            plugin.getLogger().warning("Error while sending StaffLogger message to Discord: " + t);
+            plugin.getLogger().warning("Error while sending DiscordSRVStaffLogger message to Discord: " + t);
         }
     }
 }

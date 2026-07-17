@@ -1,5 +1,5 @@
 # ===================================================================
-#  StaffLogger configuration
+#  DiscordSRVStaffLogger configuration
 # ===================================================================
 
 discord:
@@ -36,7 +36,7 @@ commands:
     clear: [minecraft.command.clear, essentials.clearinventory]
 
   # Extra commands to log generically, beyond the four built-in actions above. When a staff
-  # member runs one, StaffLogger posts who ran it and the full command. Two forms:
+  # member runs one, DiscordSRVStaffLogger posts who ran it and the full command. Two forms:
   #
   #   Simple - a list of command names (permission gate defaults to minecraft.command.<name>):
   #     watch: [gamemode, op, deop, whitelist]

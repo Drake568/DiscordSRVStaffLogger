@@ -1,7 +1,7 @@
-package com.stafflogger.listener;
+package com.discordsrvstafflogger.listener;
 
-import com.stafflogger.DiscordNotifier;
-import com.stafflogger.StaffLogger;
+import com.discordsrvstafflogger.DiscordNotifier;
+import com.discordsrvstafflogger.DiscordSRVStaffLogger;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -70,7 +70,7 @@ public final class CommandListener implements Listener {
     private record WatchEntry(String title, Set<String> permissions) {
     }
 
-    public CommandListener(StaffLogger plugin, DiscordNotifier notifier) {
+    public CommandListener(DiscordSRVStaffLogger plugin, DiscordNotifier notifier) {
         this.notifier = notifier;
 
         this.rollbacksEnabled = plugin.getConfig().getBoolean("log.rollbacks", true);
@@ -111,7 +111,7 @@ public final class CommandListener implements Listener {
      * </ul>
      * If permissions are omitted, they default to {@code minecraft.command.<name>}.
      */
-    private static Map<String, WatchEntry> parseWatched(StaffLogger plugin) {
+    private static Map<String, WatchEntry> parseWatched(DiscordSRVStaffLogger plugin) {
         Map<String, WatchEntry> result = new HashMap<>();
         Object raw = plugin.getConfig().get("commands.watch");
 
@@ -190,7 +190,7 @@ public final class CommandListener implements Listener {
             if (rollbackSubs.contains(sub)) {
                 if (permitted(sender, rollbackPerms)) {
                     String action = (sub.equals("rollback") || sub.equals("rb")) ? "Rollback" : capitalize(sub);
-                    notifier.send("CoreProtect " + action, DiscordNotifier.ROLLBACK_COLOR, StaffLogger.fields(
+                    notifier.send("CoreProtect " + action, DiscordNotifier.ROLLBACK_COLOR, DiscordSRVStaffLogger.fields(
                             "Staff", executor,
                             "Command", fullCommand));
                 }
@@ -203,7 +203,7 @@ public final class CommandListener implements Listener {
                         && parts.length >= 2 && enchantSubcommands.contains(parts[1].toLowerCase(Locale.ROOT)));
         if (enchantsEnabled && enchantMatch) {
             if (permitted(sender, enchantPerms)) {
-                notifier.send("Item Enchanted", DiscordNotifier.ENCHANT_COLOR, StaffLogger.fields(
+                notifier.send("Item Enchanted", DiscordNotifier.ENCHANT_COLOR, DiscordSRVStaffLogger.fields(
                         "Staff", executor,
                         "Command", fullCommand));
             }
@@ -214,7 +214,7 @@ public final class CommandListener implements Listener {
             Set<String> nodes = GIVE_LIKE.contains(base) ? givePerms : clearPerms;
             String target = parts.length >= 2 ? parts[1] : null;
             if (targetsAnotherPlayer(sender, target) && permitted(sender, nodes)) {
-                notifier.send("Inventory Changed (command)", DiscordNotifier.INVENTORY_COLOR, StaffLogger.fields(
+                notifier.send("Inventory Changed (command)", DiscordNotifier.INVENTORY_COLOR, DiscordSRVStaffLogger.fields(
                         "Staff", executor,
                         "Target", target,
                         "Command", fullCommand));
@@ -225,7 +225,7 @@ public final class CommandListener implements Listener {
         // Owner-defined extra commands (logged generically as "who ran what").
         WatchEntry entry = watched.get(base);
         if (entry != null && permitted(sender, entry.permissions())) {
-            notifier.send(entry.title(), DiscordNotifier.WATCH_COLOR, StaffLogger.fields(
+            notifier.send(entry.title(), DiscordNotifier.WATCH_COLOR, DiscordSRVStaffLogger.fields(
                     "Staff", executor,
                     "Command", fullCommand));
         }

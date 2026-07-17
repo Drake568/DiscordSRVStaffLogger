@@ -1,7 +1,7 @@
-package com.stafflogger.listener;
+package com.discordsrvstafflogger.listener;
 
-import com.stafflogger.DiscordNotifier;
-import com.stafflogger.StaffLogger;
+import com.discordsrvstafflogger.DiscordNotifier;
+import com.discordsrvstafflogger.DiscordSRVStaffLogger;
 import litebans.api.Entry;
 import litebans.api.Events;
 import org.bukkit.Bukkit;
@@ -22,13 +22,13 @@ import java.util.UUID;
  */
 public final class BanListener {
 
-    private final StaffLogger plugin;
+    private final DiscordSRVStaffLogger plugin;
     private final DiscordNotifier notifier;
     private final boolean logBans;
     private final boolean logUnbans;
     private Events.Listener listener;
 
-    public BanListener(StaffLogger plugin, DiscordNotifier notifier, boolean logBans, boolean logUnbans) {
+    public BanListener(DiscordSRVStaffLogger plugin, DiscordNotifier notifier, boolean logBans, boolean logUnbans) {
         this.plugin = plugin;
         this.notifier = notifier;
         this.logBans = logBans;
@@ -91,7 +91,7 @@ public final class BanListener {
             duration = "Unknown";
         }
 
-        notifier.send("Player Banned", DiscordNotifier.BAN_COLOR, StaffLogger.fields(
+        notifier.send("Player Banned", DiscordNotifier.BAN_COLOR, DiscordSRVStaffLogger.fields(
                 "Staff", staff,
                 "Player", target,
                 "Reason", reason,
@@ -105,7 +105,7 @@ public final class BanListener {
             staff = "Console";
         }
 
-        notifier.send("Player Unbanned", DiscordNotifier.UNBAN_COLOR, StaffLogger.fields(
+        notifier.send("Player Unbanned", DiscordNotifier.UNBAN_COLOR, DiscordSRVStaffLogger.fields(
                 "Staff", staff,
                 "Player", resolveTarget(entry),
                 "Type", safeIsIpBan(entry) ? "IP ban" : "Ban"));

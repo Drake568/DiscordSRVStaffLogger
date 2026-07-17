@@ -1,9 +1,9 @@
-package com.stafflogger.listener;
+package com.discordsrvstafflogger.listener;
 
 import com.janboerman.invsee.spigot.api.EnderSpectatorInventory;
 import com.janboerman.invsee.spigot.api.SpectatorInventory;
-import com.stafflogger.DiscordNotifier;
-import com.stafflogger.StaffLogger;
+import com.discordsrvstafflogger.DiscordNotifier;
+import com.discordsrvstafflogger.DiscordSRVStaffLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
@@ -53,7 +53,7 @@ public final class InventoryEditListener implements Listener {
     // Value maps a single-quantity item "signature" to the total amount held.
     private final Map<UUID, Map<ItemStack, Integer>> snapshots = new HashMap<>();
 
-    public InventoryEditListener(StaffLogger plugin, DiscordNotifier notifier) {
+    public InventoryEditListener(DiscordSRVStaffLogger plugin, DiscordNotifier notifier) {
         this.notifier = notifier;
     }
 
@@ -99,7 +99,7 @@ public final class InventoryEditListener implements Listener {
         String kind = (spectator instanceof EnderSpectatorInventory) ? "Ender Chest" : "Inventory";
 
         notifier.send("Inventory Edited via InvSee (" + kind + ")", DiscordNotifier.INVENTORY_COLOR,
-                StaffLogger.fields(
+                DiscordSRVStaffLogger.fields(
                         "Staff", viewer.getName(),
                         "Target", spectator.getSpectatedPlayerName(),
                         "Added", added.length() == 0 ? null : added.toString(),

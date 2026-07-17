@@ -1,8 +1,8 @@
-package com.stafflogger;
+package com.discordsrvstafflogger;
 
-import com.stafflogger.listener.BanListener;
-import com.stafflogger.listener.CommandListener;
-import com.stafflogger.listener.InventoryEditListener;
+import com.discordsrvstafflogger.listener.BanListener;
+import com.discordsrvstafflogger.listener.CommandListener;
+import com.discordsrvstafflogger.listener.InventoryEditListener;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  *   <li>Adding/removing items from another player's inventory (give/clear commands + InvSee++ GUI)</li>
  * </ol>
  */
-public final class StaffLogger extends JavaPlugin {
+public final class DiscordSRVStaffLogger extends JavaPlugin {
 
     private DiscordNotifier notifier;
     private BanListener banListener;
@@ -69,7 +69,7 @@ public final class StaffLogger extends JavaPlugin {
             }
         }
 
-        getLogger().info("StaffLogger enabled. Posting to DiscordSRV channel \"" + channelName + "\".");
+        getLogger().info("DiscordSRVStaffLogger enabled. Posting to DiscordSRV channel \"" + channelName + "\".");
     }
 
     @Override
