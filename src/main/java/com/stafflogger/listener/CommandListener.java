@@ -54,6 +54,8 @@ public final class CommandListener implements Listener {
     private final Set<String> rollbackBases;
     private final Set<String> rollbackSubs;
     private final Set<String> enchantBases;
+    private final Set<String> enchantSubcommandBases;
+    private final Set<String> enchantSubcommands;
     private final Set<String> giveClearBases;
 
     private final Set<String> rollbackPerms;
@@ -79,6 +81,10 @@ public final class CommandListener implements Listener {
         this.rollbackBases = plugin.lowerSet("commands.rollback.bases", List.of("co", "core", "coreprotect"));
         this.rollbackSubs = plugin.lowerSet("commands.rollback.subcommands", List.of("rollback", "rb", "undo"));
         this.enchantBases = plugin.lowerSet("commands.enchant.bases", List.of("enchant", "enchantment"));
+        // Base commands that only count with a tracked subcommand, e.g. Enchants Squared's
+        // /es enchant|give|remove.
+        this.enchantSubcommandBases = plugin.lowerSet("commands.enchant.subcommand-bases", List.of("es"));
+        this.enchantSubcommands = plugin.lowerSet("commands.enchant.subcommands", List.of("enchant", "give", "remove"));
         this.giveClearBases = plugin.lowerSet("commands.give-clear.bases", List.of(
                 "give", "clear", "clearinventory", "clearinvent", "ci",
                 "invgive", "invclear", "endergive", "enderclear"));
@@ -192,7 +198,10 @@ public final class CommandListener implements Listener {
             }
         }
 
-        if (enchantsEnabled && enchantBases.contains(base)) {
+        boolean enchantMatch = enchantBases.contains(base)
+                || (enchantSubcommandBases.contains(base)
+                        && parts.length >= 2 && enchantSubcommands.contains(parts[1].toLowerCase(Locale.ROOT)));
+        if (enchantsEnabled && enchantMatch) {
             if (permitted(sender, enchantPerms)) {
                 notifier.send("Item Enchanted", DiscordNotifier.ENCHANT_COLOR, StaffLogger.fields(
                         "Staff", executor,

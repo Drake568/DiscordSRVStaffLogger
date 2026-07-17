@@ -58,7 +58,12 @@ commands:
     bases: [co, core, coreprotect]
     subcommands: [rollback, rb, undo]
   enchant:
+    # Whole-command enchant commands (the entire command is the action).
     bases: [enchant, enchantment]
+    # Base commands that only count when followed by one of the subcommands below, e.g.
+    # Enchants Squared's /es enchant, /es give, /es remove. Logged as the same enchant action.
+    subcommand-bases: [es]
+    subcommands: [enchant, give, remove]
   give-clear:
     # Commands that add/remove items from a player's inventory. Only logged when
     # the target is a DIFFERENT player than the executor (self-actions are ignored).
