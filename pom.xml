@@ -11,6 +11,14 @@
     <name>DiscordSRVStaffLogger</name>
     <description>Logs sensitive staff actions to a Discord channel via DiscordSRV.</description>
 
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>21</java.version>

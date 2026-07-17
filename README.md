@@ -137,3 +137,11 @@ Enchants Squared installed and the channel mapped, run each and confirm a single
 
 Watch the server console for guard warnings if DiscordSRV / the channel / LiteBans / InvSee++
 are missing.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+This plugin only *hooks* the following plugins at runtime (via `provided`-scope APIs; it never
+bundles or redistributes them), and they retain their own licenses: DiscordSRV (GPL-3.0),
+InvSee++ (LGPL-2.1), the Paper API, and LiteBans (commercial; developer API used as published).
