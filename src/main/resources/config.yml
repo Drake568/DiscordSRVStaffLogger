@@ -19,9 +19,13 @@ log:
 
 # When true, actions performed by operators (op players) are NOT logged - useful if your
 # owners/admins are op and you only want to audit lower-ranked staff. Applies to every action
-# type (commands, InvSee++ edits, and bans/unbans issued by an op). Console is never treated
-# as an op player. Default false (log everyone).
+# type (commands, InvSee++ edits, and bans/unbans issued by an op). Default false (log everyone).
 ignore-ops: false
+
+# When true, actions performed by the console or command blocks (i.e. non-player, automated
+# senders) are NOT logged. Applies to commands and bans/unbans issued from the console.
+# Default false.
+ignore-console: false
 
 # Command matching. Bases are matched after stripping any `namespace:` prefix
 # (e.g. minecraft:give -> give) and lower-casing. Add your server's custom

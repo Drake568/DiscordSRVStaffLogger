@@ -28,6 +28,7 @@ public final class BanListener {
     private final boolean logBans;
     private final boolean logUnbans;
     private final boolean ignoreOps;
+    private final boolean ignoreConsole;
     private Events.Listener listener;
 
     public BanListener(DiscordSRVStaffLogger plugin, DiscordNotifier notifier, boolean logBans, boolean logUnbans) {
@@ -36,6 +37,7 @@ public final class BanListener {
         this.logBans = logBans;
         this.logUnbans = logUnbans;
         this.ignoreOps = plugin.getConfig().getBoolean("ignore-ops", false);
+        this.ignoreConsole = plugin.getConfig().getBoolean("ignore-console", false);
     }
 
     public void register() {
@@ -75,6 +77,9 @@ public final class BanListener {
     }
 
     private void handleBan(Entry entry) {
+        if (ignoreConsole && isConsoleExecutor(entry)) {
+            return; // ban issued from console - exempt
+        }
         if (ignoreOps && isOpByUuid(safeExecutorUuid(entry))) {
             return; // ban issued by an op - exempt
         }
@@ -107,6 +112,9 @@ public final class BanListener {
 
     private void handleUnban(Entry entry) {
         String staff = safeRemovedByName(entry);
+        if (ignoreConsole && isConsoleName(staff)) {
+            return; // unban issued from console - exempt
+        }
         if (ignoreOps && isOpByName(staff)) {
             return; // unban issued by an op - exempt (online remover only; see isOpByName)
         }
@@ -134,6 +142,20 @@ public final class BanListener {
         } catch (Throwable t) {
             return null;
         }
+    }
+
+    /** Console executor = no UUID (LiteBans omits it for console) or an explicit "Console" name. */
+    private boolean isConsoleExecutor(Entry entry) {
+        String uuid = safeExecutorUuid(entry);
+        if (uuid == null || uuid.isBlank()) {
+            return true;
+        }
+        return isConsoleName(entry.getExecutorName());
+    }
+
+    /** Treats null/blank/"Console" as the console (LiteBans uses a null remover for system actions). */
+    private boolean isConsoleName(String name) {
+        return name == null || name.isBlank() || name.equalsIgnoreCase("Console");
     }
 
     /** Op check by UUID (used for the ban executor, whose UUID LiteBans provides). */

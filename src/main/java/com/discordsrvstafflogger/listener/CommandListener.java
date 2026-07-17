@@ -51,6 +51,7 @@ public final class CommandListener implements Listener {
     private final boolean giveClearEnabled;
     private final boolean requirePermission;
     private final boolean ignoreOps;
+    private final boolean ignoreConsole;
 
     private final Set<String> rollbackBases;
     private final Set<String> rollbackSubs;
@@ -79,6 +80,7 @@ public final class CommandListener implements Listener {
         this.giveClearEnabled = plugin.getConfig().getBoolean("log.inventory-edits", true);
         this.requirePermission = plugin.getConfig().getBoolean("commands.require-permission", true);
         this.ignoreOps = plugin.getConfig().getBoolean("ignore-ops", false);
+        this.ignoreConsole = plugin.getConfig().getBoolean("ignore-console", false);
 
         this.rollbackBases = plugin.lowerSet("commands.rollback.bases", List.of("co", "core", "coreprotect"));
         this.rollbackSubs = plugin.lowerSet("commands.rollback.subcommands", List.of("rollback", "rb", "undo"));
@@ -171,6 +173,9 @@ public final class CommandListener implements Listener {
     private void handle(CommandSender sender, String raw) {
         if (raw == null) {
             return;
+        }
+        if (ignoreConsole && !(sender instanceof Player)) {
+            return; // console / command-block actions are exempt from logging
         }
         if (ignoreOps && sender instanceof Player player && player.isOp()) {
             return; // op actions are exempt from logging
