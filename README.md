@@ -18,17 +18,19 @@ Failed no-permission command attempts are not logged (configurable per action).
 
 ## Requirements
 
-- **Server:** Paper **1.21.x** (runs on Java 21).
-- **Plugins on the server** (each is optional; a missing one just disables its path with a warning):
-  - **DiscordSRV** — required for anything to be posted.
-  - **LiteBans** — for ban logging.
-  - **InvSeePlusPlus (InvSee++)** — for GUI inventory-edit logging.
-  - CoreProtect / EssentialsX — the commands being watched (no dependency needed).
+- **Server:** Paper **26.2** (runs on **Java 25**).
+- **Plugins on the server** (each is optional; a missing one just disables its path with a warning).
+  On 26.2 make sure each is a 26.2-capable build:
+  - **DiscordSRV** (1.30.5+) — required for anything to be posted.
+  - **LiteBans** — for ban/unban logging.
+  - **InvSeePlusPlus (InvSee++) 0.31.15+** — for GUI inventory-edit logging (older builds won't load on 26.2).
+  - CoreProtect / EssentialsX / Enchants Squared — the commands being watched (no build dependency);
+    install 26.2-capable builds.
 
 ## Building
 
-This targets Paper 1.21, whose API is compiled to **Java 21 bytecode**, so you need a
-**JDK 21** to build (a JDK 17 will fail to read the Paper API). This project uses **Maven**.
+This targets Paper 26.2, whose API is compiled to **Java 25 bytecode**, so you need a
+**JDK 25** to build (an older JDK will fail to read the Paper API). This project uses **Maven**.
 
 **Option A — IntelliJ (matches the existing project):**
 1. `File ▸ Open` → select this folder's `pom.xml` → *Open as Project*.
@@ -47,9 +49,11 @@ The built jar is `target/DiscordSRVStaffLogger-1.0.0.jar`. Drop it in your serve
 > from InvSee++'s own published POM and are **harmless** — they don't affect our compile and
 > the build still reports `BUILD SUCCESS`.
 
-> Dependency versions are pinned in `pom.xml` (Paper `1.21.8`, DiscordSRV `1.30.5`,
-> LiteBans API `0.6.1`, InvSee++ `0.31.1-SNAPSHOT`). Bump them there if needed; the InvSee++
-> and Paper artifacts come from snapshot repos.
+> Dependency versions are pinned in `pom.xml` (Paper `26.2.build.60-beta`, DiscordSRV `1.30.5`,
+> LiteBans API `0.6.1`, InvSee++ `0.31.1-SNAPSHOT`). The InvSee++ compile dependency is
+> `provided` (compile-only, not bundled) and its API is unchanged, so it stays on the Repsy
+> snapshot — only the *server's* InvSee++ plugin needs to be 0.31.15+ for 26.2. Bump the Paper
+> build to the latest 26.2 (or a stable release) when you upgrade.
 
 ## Setup
 

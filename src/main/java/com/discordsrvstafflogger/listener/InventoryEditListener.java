@@ -141,8 +141,10 @@ public final class InventoryEditListener implements Listener {
 
         ItemMeta meta = item.hasItemMeta() ? item.getItemMeta() : null;
         if (meta != null) {
-            if (meta.hasDisplayName()) {
-                String name = plain(meta.displayName());
+            // Use customName() (the player-applied name) rather than the obsolete displayName();
+            // MC split the name component into custom_name vs item_name in 1.21.4.
+            if (meta.hasCustomName()) {
+                String name = plain(meta.customName());
                 if (!name.isBlank()) {
                     sb.append(" \"").append(name).append('"');
                 }
