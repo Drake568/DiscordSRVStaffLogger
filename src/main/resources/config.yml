@@ -1,0 +1,65 @@
+# ===================================================================
+#  StaffLogger configuration
+# ===================================================================
+
+discord:
+  # The DiscordSRV "game channel" name to post to. This must match a key in
+  # DiscordSRV's own config.yml under `Channels:`, e.g.
+  #     Channels: {"global": "111...", "staff-log": "222..."}
+  # Then set channel-name below to "staff-log".
+  channel-name: "staff-log"
+
+# Turn individual action logs on/off.
+log:
+  bans: true            # requires LiteBans
+  unbans: true          # requires LiteBans (logged via LiteBans' unban event)
+  rollbacks: true       # CoreProtect rollback/undo commands
+  enchants: true        # /enchant commands
+  inventory-edits: true # give/clear commands + InvSee++ GUI edits (requires InvSeePlusPlus for the GUI path)
+
+# Command matching. Bases are matched after stripping any `namespace:` prefix
+# (e.g. minecraft:give -> give) and lower-casing. Add your server's custom
+# aliases here if needed.
+commands:
+  # When true, a tracked command is only logged if the sender holds at least one of the
+  # permission nodes listed below for that action - this suppresses failed no-permission
+  # attempts. Operators satisfy any node. Set false to log every attempt regardless.
+  require-permission: true
+
+  # Permission nodes that mean "this sender could run the command". List both the vanilla
+  # node (minecraft.command.<x>) and your plugin's node so either grants pass. Add custom
+  # nodes here if your permissions plugin uses different ones.
+  permissions:
+    rollback: [coreprotect.rollback]
+    enchant: [minecraft.command.enchant, essentials.enchant]
+    give: [minecraft.command.give, essentials.give]
+    clear: [minecraft.command.clear, essentials.clearinventory]
+
+  # Extra commands to log generically, beyond the four built-in actions above. When a staff
+  # member runs one, StaffLogger posts who ran it and the full command. Two forms:
+  #
+  #   Simple - a list of command names (permission gate defaults to minecraft.command.<name>):
+  #     watch: [gamemode, op, deop, whitelist]
+  #
+  #   Advanced - a map with a custom embed title and/or permission nodes per command:
+  #     watch:
+  #       gamemode:
+  #         title: "Gamemode Changed"
+  #         permissions: [minecraft.command.gamemode, essentials.gamemode]
+  #       op:
+  #         title: "Operator Granted"
+  #         permissions: [minecraft.command.op]
+  #
+  # Names are matched after stripping any namespace (e.g. minecraft:gamemode -> gamemode).
+  # require-permission (above) applies here too. Leave empty to add none.
+  watch: []
+
+  rollback:
+    bases: [co, core, coreprotect]
+    subcommands: [rollback, rb, undo]
+  enchant:
+    bases: [enchant, enchantment]
+  give-clear:
+    # Commands that add/remove items from a player's inventory. Only logged when
+    # the target is a DIFFERENT player than the executor (self-actions are ignored).
+    bases: [give, clear, clearinventory, clearinvent, ci, invgive, invclear, endergive, enderclear]

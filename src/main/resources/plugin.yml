@@ -1,0 +1,15 @@
+name: StaffLogger
+version: '${project.version}'
+main: com.stafflogger.StaffLogger
+api-version: '1.21'
+author: Jacob
+description: Logs sensitive staff actions to a Discord channel via DiscordSRV.
+
+# All integrations are optional and guarded at runtime. A missing plugin simply
+# disables the path that depends on it (a warning is logged once on enable).
+softdepend:
+  - DiscordSRV
+  - LiteBans
+  - InvSeePlusPlus
+  - Essentials
+  - CoreProtect

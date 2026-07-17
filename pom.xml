@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.stafflogger</groupId>
+    <artifactId>stafflogger</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>StaffLogger</name>
+    <description>Logs sensitive staff actions to a Discord channel via DiscordSRV.</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>21</java.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+        <repository>
+            <id>scarsz-nexus</id>
+            <url>https://nexus.scarsz.me/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>codemc</id>
+            <url>https://repo.codemc.io/repository/maven-public/</url>
+        </repository>
+        <repository>
+            <id>jannyboy11-repsy</id>
+            <url>https://repo.repsy.io/mvn/jannyboy11/minecraft</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <!-- Paper 1.21.x API (compiled to Java 21 bytecode -> requires JDK 21 to build) -->
+        <dependency>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>1.21.8-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- DiscordSRV: bundles (relocated) JDA 4; import from github.scarsz.discordsrv.dependencies.jda.* -->
+        <dependency>
+            <groupId>com.discordsrv</groupId>
+            <artifactId>discordsrv</artifactId>
+            <version>1.30.5</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- LiteBans developer API (Events.Listener / Entry) -->
+        <dependency>
+            <groupId>litebans</groupId>
+            <artifactId>api</artifactId>
+            <version>0.6.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- InvSee++ API interfaces (SpectatorInventory / EnderSpectatorInventory) live in _common -->
+        <dependency>
+            <groupId>com.janboerman.invsee</groupId>
+            <artifactId>invsee-plus-plus_common</artifactId>
+            <version>0.31.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>StaffLogger-${project.version}</finalName>
+        <resources>
+            <!-- Filter plugin.yml so ${project.version} is injected at build time -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>${java.version}</release>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
