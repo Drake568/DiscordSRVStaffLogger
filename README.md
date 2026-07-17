@@ -112,6 +112,7 @@ Then full-restart and verify LiteBans owns `/ban` (compare `/ban` and `/litebans
 ### 5. Tune DiscordSRVStaffLogger's config
 `plugins/DiscordSRVStaffLogger/config.yml` lets you:
 - enable/disable each action (`log.*`),
+- **ignore actions by op players** (`ignore-ops: true`) — audit only lower-ranked staff,
 - set the permission nodes that gate each command action (`commands.permissions.*`),
 - edit the matched command bases/subcommands/aliases (`commands.rollback`, `commands.enchant`, …),
 - add extra commands to log generically (`commands.watch`).

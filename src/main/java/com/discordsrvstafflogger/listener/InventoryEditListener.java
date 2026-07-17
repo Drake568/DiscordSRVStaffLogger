@@ -48,6 +48,7 @@ public final class InventoryEditListener implements Listener {
     private static final int MAX_LORE_CHARS = 200;
 
     private final DiscordNotifier notifier;
+    private final boolean ignoreOps;
 
     // One open top-inventory per viewer at a time -> key snapshots by the viewer's UUID.
     // Value maps a single-quantity item "signature" to the total amount held.
@@ -55,10 +56,14 @@ public final class InventoryEditListener implements Listener {
 
     public InventoryEditListener(DiscordSRVStaffLogger plugin, DiscordNotifier notifier) {
         this.notifier = notifier;
+        this.ignoreOps = plugin.getConfig().getBoolean("ignore-ops", false);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onOpen(InventoryOpenEvent event) {
+        if (ignoreOps && event.getPlayer().isOp()) {
+            return; // op edits are exempt - don't even snapshot
+        }
         Inventory top = event.getView().getTopInventory();
         if (top instanceof SpectatorInventory) {
             snapshots.put(event.getPlayer().getUniqueId(), countItems(top));

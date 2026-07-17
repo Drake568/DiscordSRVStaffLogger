@@ -6,6 +6,7 @@ import litebans.api.Entry;
 import litebans.api.Events;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
@@ -26,6 +27,7 @@ public final class BanListener {
     private final DiscordNotifier notifier;
     private final boolean logBans;
     private final boolean logUnbans;
+    private final boolean ignoreOps;
     private Events.Listener listener;
 
     public BanListener(DiscordSRVStaffLogger plugin, DiscordNotifier notifier, boolean logBans, boolean logUnbans) {
@@ -33,6 +35,7 @@ public final class BanListener {
         this.notifier = notifier;
         this.logBans = logBans;
         this.logUnbans = logUnbans;
+        this.ignoreOps = plugin.getConfig().getBoolean("ignore-ops", false);
     }
 
     public void register() {
@@ -72,6 +75,9 @@ public final class BanListener {
     }
 
     private void handleBan(Entry entry) {
+        if (ignoreOps && isOpByUuid(safeExecutorUuid(entry))) {
+            return; // ban issued by an op - exempt
+        }
         String staff = entry.getExecutorName();
         if (staff == null || staff.isBlank()) {
             staff = "Console";
@@ -101,6 +107,9 @@ public final class BanListener {
 
     private void handleUnban(Entry entry) {
         String staff = safeRemovedByName(entry);
+        if (ignoreOps && isOpByName(staff)) {
+            return; // unban issued by an op - exempt (online remover only; see isOpByName)
+        }
         if (staff == null || staff.isBlank()) {
             staff = "Console";
         }
@@ -117,6 +126,38 @@ public final class BanListener {
         } catch (Throwable t) {
             return null;
         }
+    }
+
+    private String safeExecutorUuid(Entry entry) {
+        try {
+            return entry.getExecutorUUID();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** Op check by UUID (used for the ban executor, whose UUID LiteBans provides). */
+    private boolean isOpByUuid(String uuid) {
+        try {
+            if (uuid == null || uuid.isBlank()) {
+                return false; // console/system - not an op player
+            }
+            return Bukkit.getOfflinePlayer(UUID.fromString(uuid)).isOp();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * Op check by name (used for the unban remover, where only a name is exposed). Resolves the
+     * online player only; an offline/console remover is treated as not-op and will be logged.
+     */
+    private boolean isOpByName(String name) {
+        if (name == null || name.isBlank()) {
+            return false;
+        }
+        Player player = Bukkit.getPlayerExact(name);
+        return player != null && player.isOp();
     }
 
     /** Prefer a readable player name; fall back to UUID, then IP (for IP-only bans). */
