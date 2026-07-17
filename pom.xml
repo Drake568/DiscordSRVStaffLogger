@@ -21,7 +21,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
     </properties>
 
     <repositories>
@@ -44,11 +44,13 @@
     </repositories>
 
     <dependencies>
-        <!-- Paper 1.21.x API (compiled to Java 21 bytecode -> requires JDK 21 to build) -->
+        <!-- Paper 26.2 API (compiled to Java 25 bytecode -> requires JDK 25 to build).
+             Version format changed to 26.<drop>.build.<N>-<channel>; bump to the latest 26.2
+             build (or a stable one once released) when upgrading. -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21.8-R0.1-SNAPSHOT</version>
+            <version>26.2.build.60-beta</version>
             <scope>provided</scope>
         </dependency>
 
@@ -68,7 +70,10 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- InvSee++ API interfaces (SpectatorInventory / EnderSpectatorInventory) live in _common -->
+        <!-- InvSee++ API interfaces (SpectatorInventory / EnderSpectatorInventory) live in _common.
+             This is provided scope (compile-only; not bundled) and the API package/methods we use are
+             unchanged, so we keep compiling against the Repsy snapshot. The SERVER, however, must run
+             InvSee++ 0.31.15+ for actual MC 26.2 support (older builds won't load on 26.2). -->
         <dependency>
             <groupId>com.janboerman.invsee</groupId>
             <artifactId>invsee-plus-plus_common</artifactId>

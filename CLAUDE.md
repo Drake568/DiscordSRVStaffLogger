@@ -17,20 +17,21 @@ Actions captured:
 
 ## Build
 
-Requires **JDK 21** and **Maven**. Paper 1.21's API is compiled to Java 21 bytecode, so a
-JDK 17 (or lower) **cannot** compile against it.
+Requires **JDK 25** and **Maven**. Paper 26.2's API is compiled to Java 25 bytecode, so an
+older JDK **cannot** compile against it. (26.2 also requires Java 25 to *run* the server.)
 
 Standard:
 ```bash
 mvn clean package    # -> target/DiscordSRVStaffLogger-1.0.0.jar
 ```
 
-This dev machine has no standalone Maven and no JDK 21 on `java_home`, but both exist elsewhere.
-The build command that works here (IntelliJ's bundled Maven + Homebrew JDK 21):
+This dev machine has IntelliJ's bundled Maven but only JDK 17/21 installed — **install a JDK 25**
+(e.g. `brew install openjdk@25` or Temurin 25) to build this branch. Then:
 ```bash
-JAVA_HOME=/opt/homebrew/opt/openjdk@21 \
+JAVA_HOME=/opt/homebrew/opt/openjdk@25 \
   "/Applications/IntelliJ IDEA.app/Contents/plugins/maven/lib/maven3/bin/mvn" -B -ntp clean package
 ```
+CI (GitHub Actions) uses Temurin 25, so the authoritative build check is the CI run.
 
 **Expected benign noise:** the build prints `[ERROR]`/`[WARNING]` lines about
 `invsee-plus-plus_common`'s `systemPath` for `BungeePerms`/`UltraPermissionsAPI`. These come from
@@ -38,12 +39,12 @@ InvSee++'s own published POM, don't affect our compile, and the build still repo
 Filter with `| grep -v systemPath` when checking output.
 
 There is **no test suite**; a successful compile is the only automated check. Real verification
-requires a live Paper 1.21 server with the integration plugins installed (see README checklist).
+requires a live Paper 26.2 server with the integration plugins installed (see README checklist).
 
 ## Layout
 
 ```
-pom.xml                                  Java 21, all integrations `provided` (never shaded)
+pom.xml                                  Java 25, all integrations `provided` (never shaded)
 src/main/resources/plugin.yml            softdepend on all integration plugins; version filtered from pom
 src/main/resources/config.yml            toggles, permission nodes, command keyword lists, watch list
 src/main/java/com/discordsrvstafflogger/
@@ -127,6 +128,7 @@ do **not** appear in an existing server's config. Behavior depends on the reader
 
 ## Dependency versions (pinned in pom.xml)
 
-Paper `1.21.8-R0.1-SNAPSHOT`, DiscordSRV `1.30.5`, LiteBans API `0.6.1`, InvSee++
-`0.31.1-SNAPSHOT` (Repsy). Verify latest against each repo before bumping. Package is
-`com.discordsrvstafflogger`, `api-version: '1.21'`, Java 21.
+Paper `26.2.build.60-beta` (new `26.<drop>.build.<N>-<channel>` scheme), DiscordSRV `1.30.5`,
+LiteBans API `0.6.1`, InvSee++ `0.31.1-SNAPSHOT` (Repsy; compile-only — server needs 0.31.15+).
+Verify latest against each repo before bumping. Package is `com.discordsrvstafflogger`,
+`api-version: '26.2'`, Java 25.
