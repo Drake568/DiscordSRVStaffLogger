@@ -13,3 +13,15 @@ softdepend:
   - InvSeePlusPlus
   - Essentials
   - CoreProtect
+
+commands:
+  staffloggerreload:
+    description: Reloads DiscordSRVStaffLogger's config.yml without restarting the server.
+    usage: /<command>
+    aliases: [dslreload]
+    permission: discordsrvstafflogger.reload
+
+permissions:
+  discordsrvstafflogger.reload:
+    description: Allows reloading DiscordSRVStaffLogger's config.yml.
+    default: op

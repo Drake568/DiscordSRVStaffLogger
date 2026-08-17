@@ -27,6 +27,12 @@ ignore-ops: false
 # Default false.
 ignore-console: false
 
+# Player usernames who are NEVER logged, regardless of the ignore-ops setting above. Use this
+# to exempt specific staff (e.g. yourself) while still logging every other op you've granted.
+# Matched case-insensitively against the acting player's username. Applies to every action type
+# (commands, InvSee++ edits, and bans/unbans). Empty by default (nobody exempt).
+ignored-staff: []
+
 # Command matching. Bases are matched after stripping any `namespace:` prefix
 # (e.g. minecraft:give -> give) and lower-casing. Add your server's custom
 # aliases here if needed.

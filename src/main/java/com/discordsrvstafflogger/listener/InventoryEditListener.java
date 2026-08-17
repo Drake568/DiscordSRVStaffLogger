@@ -6,13 +6,16 @@ import com.discordsrvstafflogger.DiscordNotifier;
 import com.discordsrvstafflogger.DiscordSRVStaffLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -23,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -34,10 +38,20 @@ import java.util.stream.Collectors;
  * the InvSee++ GUI (e.g. {@code /invsee}, {@code /endersee}).
  *
  * <p>InvSee++'s spectator inventories implement {@link SpectatorInventory}, which is a real
- * Bukkit {@link Inventory}, so normal {@link InventoryOpenEvent}/{@link InventoryCloseEvent}
- * fire with it as the top inventory. We snapshot the contents on open and diff on close, so a
- * whole editing session collapses into a single net add/remove record. Pure viewing or
- * shuffling produces a zero net delta and is not logged.
+ * Bukkit {@link Inventory} <b>backed directly by the target's live inventory</b> (for online
+ * targets). That means its contents can change for reasons that have nothing to do with the
+ * staff member watching it - the target equipping/unequipping gear, picking up or consuming
+ * items, mob-drop pickups, armor/tools breaking, or dying - all while the GUI happens to be
+ * open. Diffing a single snapshot taken on open against one taken on close (as this used to do)
+ * attributes all of that incidental drift to the staff member.
+ *
+ * <p>Instead we diff around each individual {@link InventoryClickEvent}/{@link
+ * InventoryDragEvent} the staff member performs on the GUI: snapshot immediately before the
+ * click is applied, snapshot again a tick later once it has been applied, and accumulate just
+ * that click's delta into a running per-session total. Passive changes to the live inventory that
+ * happen between clicks (or during a session with no clicks at all) never get diffed, so they're
+ * never misattributed. The accumulated total is reported when the GUI closes; a session with no
+ * net change is not logged.
  *
  * <p>Items are keyed by their full identity (material + display name + lore + enchants + other
  * meta), so a renamed/enchanted item is tracked distinctly and its details are included in the
@@ -47,45 +61,81 @@ public final class InventoryEditListener implements Listener {
 
     private static final int MAX_LORE_CHARS = 200;
 
+    private final DiscordSRVStaffLogger plugin;
     private final DiscordNotifier notifier;
     private final boolean ignoreOps;
+    private final Set<String> ignoredStaff;
 
-    // One open top-inventory per viewer at a time -> key snapshots by the viewer's UUID.
-    // Value maps a single-quantity item "signature" to the total amount held.
-    private final Map<UUID, Map<ItemStack, Integer>> snapshots = new HashMap<>();
+    // One open spectator session per viewer at a time -> keyed by the viewer's UUID.
+    // Value accumulates the net add/remove delta from each click, across the whole session.
+    private final Map<UUID, Map<ItemStack, Integer>> sessionDeltas = new HashMap<>();
 
     public InventoryEditListener(DiscordSRVStaffLogger plugin, DiscordNotifier notifier) {
+        this.plugin = plugin;
         this.notifier = notifier;
         this.ignoreOps = plugin.getConfig().getBoolean("ignore-ops", false);
+        this.ignoredStaff = plugin.lowerSet("ignored-staff", List.of());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onOpen(InventoryOpenEvent event) {
         if (ignoreOps && event.getPlayer().isOp()) {
-            return; // op edits are exempt - don't even snapshot
+            return; // op edits are exempt - don't even track
+        }
+        if (ignoredStaff.contains(event.getPlayer().getName().toLowerCase(Locale.ROOT))) {
+            return; // explicitly exempted staff member - don't even track
         }
         Inventory top = event.getView().getTopInventory();
         if (top instanceof SpectatorInventory) {
-            snapshots.put(event.getPlayer().getUniqueId(), countItems(top));
+            sessionDeltas.put(event.getPlayer().getUniqueId(), new LinkedHashMap<>());
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onClick(InventoryClickEvent event) {
+        trackClick(event.getWhoClicked(), event.getView().getTopInventory());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onDrag(InventoryDragEvent event) {
+        trackClick(event.getWhoClicked(), event.getView().getTopInventory());
+    }
+
+    /** Diffs just this one click's effect on the spectator inventory into the session total. */
+    private void trackClick(HumanEntity viewer, Inventory top) {
+        Map<ItemStack, Integer> accumulator = sessionDeltas.get(viewer.getUniqueId());
+        if (accumulator == null || !(top instanceof SpectatorInventory)) {
+            return;
+        }
+        Map<ItemStack, Integer> before = countItems(top);
+        // The click hasn't been applied to the inventory yet at MONITOR priority - the server
+        // applies it right after event dispatch finishes. Re-snapshot next tick and merge just
+        // this click's delta, so drift from the target's own concurrent play never gets counted.
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            Map<ItemStack, Integer> after = countItems(top);
+            merge(accumulator, diff(before, after));
+        });
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onClose(InventoryCloseEvent event) {
         HumanEntity viewer = event.getPlayer();
-        Map<ItemStack, Integer> before = snapshots.remove(viewer.getUniqueId());
-        if (before == null) {
+        if (!sessionDeltas.containsKey(viewer.getUniqueId())) {
             return;
         }
         Inventory top = event.getView().getTopInventory();
         if (!(top instanceof SpectatorInventory)) {
+            sessionDeltas.remove(viewer.getUniqueId());
             return;
         }
         SpectatorInventory<?> spectator = (SpectatorInventory<?>) top;
 
-        Map<ItemStack, Integer> after = countItems(top);
-        Map<ItemStack, Integer> delta = diff(before, after);
-        if (delta.isEmpty()) {
+        // Defer by a tick so a click's post-close diff (scheduled above) has merged in first.
+        Bukkit.getScheduler().runTask(plugin, () -> report(viewer, spectator, sessionDeltas.remove(viewer.getUniqueId())));
+    }
+
+    private void report(HumanEntity viewer, SpectatorInventory<?> spectator, Map<ItemStack, Integer> delta) {
+        if (delta == null || delta.isEmpty()) {
             return; // only viewed / rearranged - nothing changed
         }
 
@@ -138,6 +188,14 @@ public final class InventoryEditListener implements Listener {
             }
         }
         return delta;
+    }
+
+    /** Adds a single click's delta into the running session total, dropping entries that net to zero. */
+    private void merge(Map<ItemStack, Integer> accumulator, Map<ItemStack, Integer> clickDelta) {
+        for (Map.Entry<ItemStack, Integer> entry : clickDelta.entrySet()) {
+            accumulator.merge(entry.getKey(), entry.getValue(), Integer::sum);
+        }
+        accumulator.values().removeIf(amount -> amount == 0);
     }
 
     /** Renders a readable item description: material, custom name, enchants, and lore. */

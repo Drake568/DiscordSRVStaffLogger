@@ -114,6 +114,8 @@ Then full-restart and verify LiteBans owns `/ban` (compare `/ban` and `/litebans
 - enable/disable each action (`log.*`),
 - **ignore actions by op players** (`ignore-ops: true`) — audit only lower-ranked staff,
 - **ignore console / command-block actions** (`ignore-console: true`),
+- **exempt specific staff by name** (`ignored-staff: [YourName]`) — never logged, even if
+  `ignore-ops` is off and they're op,
 - set the permission nodes that gate each command action (`commands.permissions.*`),
 - edit the matched command bases/subcommands/aliases (`commands.rollback`, `commands.enchant`, …),
 - add extra commands to log generically (`commands.watch`).
@@ -121,6 +123,9 @@ Then full-restart and verify LiteBans owns `/ban` (compare `/ban` and `/litebans
 > **Editing an existing config:** `config.yml` is only generated on first run, so new options
 > added in an update won't appear in your existing file automatically. Add the keys you want by
 > hand, or delete `config.yml` and restart to regenerate the fully-commented default.
+
+After editing `config.yml`, run `/staffloggerreload` (alias `/dslreload`, requires
+`discordsrvstafflogger.reload`, default op) to apply the changes without restarting the server.
 
 ## Verifying end-to-end
 

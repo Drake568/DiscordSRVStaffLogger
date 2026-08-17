@@ -3,7 +3,10 @@ package com.discordsrvstafflogger;
 import com.discordsrvstafflogger.listener.BanListener;
 import com.discordsrvstafflogger.listener.CommandListener;
 import com.discordsrvstafflogger.listener.InventoryEditListener;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -28,10 +31,39 @@ public final class DiscordSRVStaffLogger extends JavaPlugin {
 
     private DiscordNotifier notifier;
     private BanListener banListener;
+    private CommandListener commandListener;
+    private InventoryEditListener inventoryEditListener;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        wireListeners();
+    }
+
+    @Override
+    public void onDisable() {
+        unwireListeners();
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!command.getName().equalsIgnoreCase("staffloggerreload")) {
+            return false;
+        }
+        unwireListeners();
+        reloadConfig();
+        wireListeners();
+        sender.sendMessage("[DiscordSRVStaffLogger] Config reloaded.");
+        return true;
+    }
+
+    /**
+     * (Re)registers every listener from the current config state. Called on enable, and again
+     * after {@code /staffloggerreload} once {@link #unwireListeners()} has torn down the old set -
+     * so config edits (channel name, log.* toggles, ignore-ops/ignore-console/ignored-staff,
+     * command keyword lists) take effect without a server restart.
+     */
+    private void wireListeners() {
         FileConfiguration config = getConfig();
 
         String channelName = config.getString("discord.channel-name", "staff-log");
@@ -43,13 +75,15 @@ public final class DiscordSRVStaffLogger extends JavaPlugin {
         if (config.getBoolean("log.rollbacks", true)
                 || config.getBoolean("log.enchants", true)
                 || config.getBoolean("log.inventory-edits", true)) {
-            pm.registerEvents(new CommandListener(this, notifier), this);
+            commandListener = new CommandListener(this, notifier);
+            pm.registerEvents(commandListener, this);
         }
 
         // 4b - InvSee++ GUI edits.
         if (config.getBoolean("log.inventory-edits", true)) {
             if (pm.getPlugin("InvSeePlusPlus") != null) {
-                pm.registerEvents(new InventoryEditListener(this, notifier), this);
+                inventoryEditListener = new InventoryEditListener(this, notifier);
+                pm.registerEvents(inventoryEditListener, this);
             } else {
                 getLogger().info("InvSeePlusPlus not found - GUI inventory-edit logging disabled "
                         + "(give/clear command logging still active).");
@@ -72,8 +106,16 @@ public final class DiscordSRVStaffLogger extends JavaPlugin {
         getLogger().info("DiscordSRVStaffLogger enabled. Posting to DiscordSRV channel \"" + channelName + "\".");
     }
 
-    @Override
-    public void onDisable() {
+    /** Unregisters everything {@link #wireListeners()} registered, so it can be called again cleanly. */
+    private void unwireListeners() {
+        if (commandListener != null) {
+            HandlerList.unregisterAll(commandListener);
+            commandListener = null;
+        }
+        if (inventoryEditListener != null) {
+            HandlerList.unregisterAll(inventoryEditListener);
+            inventoryEditListener = null;
+        }
         if (banListener != null) {
             banListener.unregister();
             banListener = null;

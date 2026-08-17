@@ -52,6 +52,7 @@ public final class CommandListener implements Listener {
     private final boolean requirePermission;
     private final boolean ignoreOps;
     private final boolean ignoreConsole;
+    private final Set<String> ignoredStaff;
 
     private final Set<String> rollbackBases;
     private final Set<String> rollbackSubs;
@@ -81,6 +82,7 @@ public final class CommandListener implements Listener {
         this.requirePermission = plugin.getConfig().getBoolean("commands.require-permission", true);
         this.ignoreOps = plugin.getConfig().getBoolean("ignore-ops", false);
         this.ignoreConsole = plugin.getConfig().getBoolean("ignore-console", false);
+        this.ignoredStaff = plugin.lowerSet("ignored-staff", List.of());
 
         this.rollbackBases = plugin.lowerSet("commands.rollback.bases", List.of("co", "core", "coreprotect"));
         this.rollbackSubs = plugin.lowerSet("commands.rollback.subcommands", List.of("rollback", "rb", "undo"));
@@ -179,6 +181,9 @@ public final class CommandListener implements Listener {
         }
         if (ignoreOps && sender instanceof Player player && player.isOp()) {
             return; // op actions are exempt from logging
+        }
+        if (sender instanceof Player player && ignoredStaff.contains(player.getName().toLowerCase(Locale.ROOT))) {
+            return; // explicitly exempted staff member
         }
         String message = raw.startsWith("/") ? raw.substring(1) : raw;
         String[] parts = message.trim().split("\\s+");

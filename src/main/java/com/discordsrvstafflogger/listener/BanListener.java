@@ -8,6 +8,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -29,6 +32,7 @@ public final class BanListener {
     private final boolean logUnbans;
     private final boolean ignoreOps;
     private final boolean ignoreConsole;
+    private final Set<String> ignoredStaff;
     private Events.Listener listener;
 
     public BanListener(DiscordSRVStaffLogger plugin, DiscordNotifier notifier, boolean logBans, boolean logUnbans) {
@@ -38,6 +42,7 @@ public final class BanListener {
         this.logUnbans = logUnbans;
         this.ignoreOps = plugin.getConfig().getBoolean("ignore-ops", false);
         this.ignoreConsole = plugin.getConfig().getBoolean("ignore-console", false);
+        this.ignoredStaff = plugin.lowerSet("ignored-staff", List.of());
     }
 
     public void register() {
@@ -84,6 +89,9 @@ public final class BanListener {
             return; // ban issued by an op - exempt
         }
         String staff = entry.getExecutorName();
+        if (isIgnoredStaff(staff)) {
+            return; // explicitly exempted staff member
+        }
         if (staff == null || staff.isBlank()) {
             staff = "Console";
         }
@@ -117,6 +125,9 @@ public final class BanListener {
         }
         if (ignoreOps && isOpByName(staff)) {
             return; // unban issued by an op - exempt (online remover only; see isOpByName)
+        }
+        if (isIgnoredStaff(staff)) {
+            return; // explicitly exempted staff member
         }
         if (staff == null || staff.isBlank()) {
             staff = "Console";
@@ -156,6 +167,10 @@ public final class BanListener {
     /** Treats null/blank/"Console" as the console (LiteBans uses a null remover for system actions). */
     private boolean isConsoleName(String name) {
         return name == null || name.isBlank() || name.equalsIgnoreCase("Console");
+    }
+
+    private boolean isIgnoredStaff(String name) {
+        return name != null && ignoredStaff.contains(name.toLowerCase(Locale.ROOT));
     }
 
     /** Op check by UUID (used for the ban executor, whose UUID LiteBans provides). */

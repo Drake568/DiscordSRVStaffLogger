@@ -13,7 +13,11 @@ Actions captured:
 2. **CoreProtect rollback / undo** — `/co rollback`, `/co rb`, `/co undo` (command detection).
 3. **Enchanting** — `/enchant`, and Enchants Squared `/es enchant|give|remove` (command detection).
 4. **Item add/remove on another player's inventory** — `/give` & `/clear` commands (only when
-   targeting another player), plus InvSee++ GUI edits (snapshot-diff, with item name/lore/enchants).
+   targeting another player), plus InvSee++ GUI edits (per-click diff, with item name/lore/enchants).
+
+Staff members can be exempted from every action type via `ignored-staff` (username list) or
+`ignore-ops`/`ignore-console` in `config.yml`. `/staffloggerreload` (alias `/dslreload`,
+permission `discordsrvstafflogger.reload`) applies config edits without restarting the server.
 
 ## Build
 
@@ -44,14 +48,18 @@ requires a live Paper 1.21 server with the integration plugins installed (see RE
 
 ```
 pom.xml                                  Java 21, all integrations `provided` (never shaded)
-src/main/resources/plugin.yml            softdepend on all integration plugins; version filtered from pom
-src/main/resources/config.yml            toggles, permission nodes, command keyword lists, watch list
+src/main/resources/plugin.yml            softdepend on all integration plugins; version filtered from pom;
+                                          declares /staffloggerreload + its permission node
+src/main/resources/config.yml            toggles, permission nodes, command keyword lists, watch list,
+                                          ignore-ops/ignore-console/ignored-staff exemptions
 src/main/java/com/discordsrvstafflogger/
-  DiscordSRVStaffLogger.java                        JavaPlugin main; reads config, guards + wires each listener
+  DiscordSRVStaffLogger.java                        JavaPlugin main; wireListeners()/unwireListeners() build +
+                                                     tear down every listener from config, so /staffloggerreload
+                                                     can re-run them cleanly; onCommand() handles the reload
   DiscordNotifier.java                    builds JDA embeds, resolves the DiscordSRV channel, sends
   listener/BanListener.java               LiteBans Events.Listener (ban + unban)
   listener/CommandListener.java           PlayerCommandPreprocessEvent + ServerCommandEvent
-  listener/InventoryEditListener.java     InvSee++ spectator-inventory snapshot/diff
+  listener/InventoryEditListener.java     InvSee++ spectator-inventory per-click diff
 ```
 
 Every integration is `softdepend` + runtime-guarded (`getPlugin(name) != null`), so a missing
@@ -86,10 +94,14 @@ plugin only disables its path (with a one-time warning) rather than breaking the
   Bukkit `Inventory`), so plain `InventoryOpenEvent`/`InventoryCloseEvent` fire. Identify with
   `instanceof SpectatorInventory` and read `getSpectatedPlayerName()`/`getSpectatedPlayerId()`;
   `EnderSpectatorInventory` distinguishes ender chest from main inventory.
-- We snapshot contents on open and diff on close (net add/remove per session; pure viewing/shuffling
-  yields zero delta and isn't logged). Items are keyed by full identity (ItemStack cloned to amount
-  1) so name/lore/enchants are tracked distinctly and rendered via Adventure's
-  `PlainTextComponentSerializer`.
+- Spectator inventories are backed directly by the target's **live** inventory (for online targets),
+  so diffing a single open-vs-close snapshot would misattribute the target's own concurrent play
+  (mob drops, gear breaking, death, ...) to the staff member. Instead we diff around each individual
+  `InventoryClickEvent`/`InventoryDragEvent`: snapshot immediately before the click applies, snapshot
+  again a tick later, and accumulate just that click's delta into a running per-session total, reported
+  on close. A session with no clicks (or a net-zero delta) isn't logged. Items are keyed by full
+  identity (ItemStack cloned to amount 1) so name/lore/enchants are tracked distinctly and rendered
+  via Adventure's `PlainTextComponentSerializer`.
 - API classes live in the `invsee-plus-plus_common` artifact.
 
 **Command detection** (`CommandListener`)
@@ -106,7 +118,8 @@ plugin only disables its path (with a one-time warning) rather than breaking the
 ## Adding a new tracked command
 
 - **Plugin with an events API** (like bans): prefer the API over command-sniffing — structured data,
-  fires once, only on success. Add a guarded listener wired in `DiscordSRVStaffLogger.onEnable`.
+  fires once, only on success. Add a guarded listener wired in `DiscordSRVStaffLogger.wireListeners()`
+  (and torn down in `unwireListeners()`, so `/staffloggerreload` picks it up).
 - **No API** (rollback/enchant/give): add it in `CommandListener`. Two shapes exist to copy:
   - whole-command (like `/enchant`): a base set + permission set.
   - base + subcommand (like `/co rollback`, `/es enchant`): base set + subcommand set.
