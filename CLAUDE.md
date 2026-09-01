@@ -28,7 +28,7 @@ JDK 21 (or lower) **cannot** compile against it — confirmed locally: compiling
 
 Standard:
 ```bash
-mvn clean package    # -> target/DiscordSRVStaffLogger-1.2.0.jar
+mvn clean package    # -> target/DiscordSRVStaffLogger-1.3.0.jar
 ```
 
 Standalone Maven is available on this dev machine via `sdkman` (`mvn` on `PATH`, Apache Maven
