@@ -18,24 +18,29 @@ Failed no-permission command attempts are not logged (configurable per action).
 
 ## Requirements
 
-- **Server:** Paper **1.21.x** (runs on Java 21).
+- **Server:** Paper **26.2** (runs on **Java 25**).
 - **Plugins on the server** (each is optional; a missing one just disables its path with a warning):
   - **DiscordSRV** — required for anything to be posted.
   - **LiteBans** — for ban logging.
-  - **InvSeePlusPlus (InvSee++)** — for GUI inventory-edit logging.
-  - CoreProtect / EssentialsX — the commands being watched (no dependency needed).
+  - **InvSeePlusPlus (InvSee++)** — for GUI inventory-edit logging. **Needs v0.31.15+ on 26.2** —
+    older InvSee++ builds fail to load on 26.2 (the compile-time API this project uses is
+    unaffected).
+  - CoreProtect / EssentialsX — the commands being watched (no dependency needed). **Note:**
+    CoreProtect's latest stable release (v24.0) has open reports of failing to load on 26.2
+    ([PlayPro/CoreProtect#919](https://github.com/PlayPro/CoreProtect/issues/919)) — you may need
+    a dev build until that's resolved.
 
 ## Building
 
-This targets Paper 1.21, whose API is compiled to **Java 21 bytecode**, so you need a
-**JDK 21** to build (a JDK 17 will fail to read the Paper API). This project uses **Maven**.
+This targets Paper 26.2, whose API is compiled to **Java 25 bytecode**, so you need a
+**JDK 25** to build (an older JDK will fail to read the Paper API). This project uses **Maven**.
 
 **Option A — IntelliJ (matches the existing project):**
 1. `File ▸ Open` → select this folder's `pom.xml` → *Open as Project*.
-2. `File ▸ Project Structure ▸ SDK` → add/download a **JDK 21** and set it as the project SDK.
+2. `File ▸ Project Structure ▸ SDK` → add/download a **JDK 25** and set it as the project SDK.
 3. Open the Maven tool window → run **`clean` + `package`** (or the `mvn` command below).
 
-**Option B — command line:** install a JDK 21 and Maven, then:
+**Option B — command line:** install a JDK 25 and Maven, then:
 ```bash
 mvn clean package
 ```
@@ -47,13 +52,16 @@ The built jar is `target/DiscordSRVStaffLogger-1.0.0.jar`. Drop it in your serve
 > from InvSee++'s own published POM and are **harmless** — they don't affect our compile and
 > the build still reports `BUILD SUCCESS`.
 
-> Dependency versions are pinned in `pom.xml` (Paper `1.21.8`, DiscordSRV `1.30.5`,
-> LiteBans API `0.6.1`, InvSee++ `0.31.1-SNAPSHOT`). Bump them there if needed; the InvSee++
-> and Paper artifacts come from snapshot repos.
+> Dependency versions are pinned in `pom.xml` (Paper `26.2.build.121-stable` — re-check papermc's
+> maven-metadata.xml for the latest `*-stable` build before bumping further — DiscordSRV
+> `1.30.5`, LiteBans API `0.6.1`, InvSee++ `0.31.1-SNAPSHOT`). Bump them there if needed; the
+> InvSee++ and Paper artifacts come from snapshot repos. Note the InvSee++ compile dependency is
+> separate from the server-side InvSee++ *plugin*, which must be v0.31.15+ to load on 26.2 at
+> all — see Requirements above.
 
 ## Setup
 
-Do these in order on your Paper 1.21 server.
+Do these in order on your Paper 26.2 server.
 
 ### 1. Install the plugins
 Put each plugin **jar directly in `plugins/`** — **not** inside a subfolder. A folder like
@@ -129,8 +137,9 @@ After editing `config.yml`, run `/staffloggerreload` (alias `/dslreload`, requir
 
 ## Verifying end-to-end
 
-On a Paper 1.21 test server with DiscordSRV, LiteBans, InvSee++, EssentialsX, CoreProtect and
-Enchants Squared installed and the channel mapped, run each and confirm a single Discord embed appears:
+On a Paper 26.2 test server with DiscordSRV, LiteBans, InvSee++ (0.31.15+), EssentialsX,
+CoreProtect and Enchants Squared installed and the channel mapped, run each and confirm a single
+Discord embed appears:
 
 - `/ban <player> <reason>` → **Player Banned** (staff / target / reason / duration).
 - `/unban <player>` → **Player Unbanned**.

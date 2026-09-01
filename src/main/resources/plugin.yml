@@ -1,7 +1,7 @@
 name: DiscordSRVStaffLogger
 version: '${project.version}'
 main: com.discordsrvstafflogger.DiscordSRVStaffLogger
-api-version: '1.21'
+api-version: '26.2'
 author: Jacob
 description: Logs sensitive staff actions to a Discord channel via DiscordSRV.
 

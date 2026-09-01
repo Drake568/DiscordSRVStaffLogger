@@ -21,19 +21,21 @@ permission `discordsrvstafflogger.reload`) applies config edits without restarti
 
 ## Build
 
-Requires **JDK 21** and **Maven**. Paper 1.21's API is compiled to Java 21 bytecode, so a
-JDK 17 (or lower) **cannot** compile against it.
+Requires **JDK 25** and **Maven**. Paper 26.2's API is compiled to Java 25 bytecode, so a
+JDK 21 (or lower) **cannot** compile against it — confirmed locally: compiling against the
+`paper-api` jar with a JDK 21 `javac` fails with `class file has wrong version 69.0, should be
+65.0`.
 
 Standard:
 ```bash
-mvn clean package    # -> target/DiscordSRVStaffLogger-1.0.0.jar
+mvn clean package    # -> target/DiscordSRVStaffLogger-1.2.0.jar
 ```
 
-This dev machine has no standalone Maven and no JDK 21 on `java_home`, but both exist elsewhere.
-The build command that works here (IntelliJ's bundled Maven + Homebrew JDK 21):
+Standalone Maven is available on this dev machine via `sdkman` (`mvn` on `PATH`, Apache Maven
+3.9.16). JDK 25 is installed via Homebrew (`openjdk@25`, keg-only — not symlinked into
+`/opt/homebrew`). The build command that works here:
 ```bash
-JAVA_HOME=/opt/homebrew/opt/openjdk@21 \
-  "/Applications/IntelliJ IDEA.app/Contents/plugins/maven/lib/maven3/bin/mvn" -B -ntp clean package
+JAVA_HOME=/opt/homebrew/opt/openjdk@25 mvn -B -ntp clean package
 ```
 
 **Expected benign noise:** the build prints `[ERROR]`/`[WARNING]` lines about
@@ -42,12 +44,14 @@ InvSee++'s own published POM, don't affect our compile, and the build still repo
 Filter with `| grep -v systemPath` when checking output.
 
 There is **no test suite**; a successful compile is the only automated check. Real verification
-requires a live Paper 1.21 server with the integration plugins installed (see README checklist).
+requires a live Paper 26.2 server with the integration plugins installed (see README checklist) —
+note InvSee++ needs v0.31.15+ and CoreProtect's latest stable release has open reports of failing
+to load on 26.2 (see the "Dependency versions" section below).
 
 ## Layout
 
 ```
-pom.xml                                  Java 21, all integrations `provided` (never shaded)
+pom.xml                                  Java 25, all integrations `provided` (never shaded)
 src/main/resources/plugin.yml            softdepend on all integration plugins; version filtered from pom;
                                           declares /staffloggerreload + its permission node
 src/main/resources/config.yml            toggles, permission nodes, command keyword lists, watch list,
@@ -140,6 +144,11 @@ do **not** appear in an existing server's config. Behavior depends on the reader
 
 ## Dependency versions (pinned in pom.xml)
 
-Paper `1.21.8-R0.1-SNAPSHOT`, DiscordSRV `1.30.5`, LiteBans API `0.6.1`, InvSee++
-`0.31.1-SNAPSHOT` (Repsy). Verify latest against each repo before bumping. Package is
-`com.discordsrvstafflogger`, `api-version: '1.21'`, Java 21.
+Paper `26.2.build.121-stable` (re-check papermc's maven-metadata.xml for the newest `*-stable`
+build before bumping further), DiscordSRV `1.30.5`, LiteBans API `0.6.1`, InvSee++
+`0.31.1-SNAPSHOT` (Repsy; compile-time API only — the server's InvSee++ *plugin* separately
+needs v0.31.15+ to load on 26.2). CoreProtect's latest stable release (v24.0) has open reports
+of failing to load on 26.2 ([PlayPro/CoreProtect#919](https://github.com/PlayPro/CoreProtect/issues/919));
+this plugin has no compile dependency on it (command-string matching only in `CommandListener`),
+so it's an operational caveat, not a code concern. Verify latest against each repo before
+bumping. Package is `com.discordsrvstafflogger`, `api-version: '26.2'`, Java 25.
