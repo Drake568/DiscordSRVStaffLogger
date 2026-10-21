@@ -45,19 +45,16 @@ This targets Paper 26.2, whose API is compiled to **Java 25 bytecode**, so you n
 mvn clean package
 ```
 
-The built jar is `target/DiscordSRVStaffLogger-1.0.0.jar`. Drop it in your server's `plugins/` folder.
-
-> During the build you'll see a couple of `[ERROR]`/`[WARNING]` lines about
-> `invsee-plus-plus_common`'s `systemPath` for `BungeePerms`/`UltraPermissionsAPI`. These come
-> from InvSee++'s own published POM and are **harmless** — they don't affect our compile and
-> the build still reports `BUILD SUCCESS`.
+The built jar is `target/DiscordSRVStaffLogger-1.4.0.jar`. Drop it in your server's `plugins/` folder.
 
 > Dependency versions are pinned in `pom.xml` (Paper `26.2.build.121-stable` — re-check papermc's
 > maven-metadata.xml for the latest `*-stable` build before bumping further — DiscordSRV
-> `1.30.5`, LiteBans API `0.6.1`, InvSee++ `0.31.1-SNAPSHOT`). Bump them there if needed; the
-> InvSee++ and Paper artifacts come from snapshot repos. Note the InvSee++ compile dependency is
-> separate from the server-side InvSee++ *plugin*, which must be v0.31.15+ to load on 26.2 at
-> all — see Requirements above.
+> `1.30.5`, LiteBans API `0.6.1`, InvSee++ `0.31.22`). Bump them there if needed; the Paper
+> artifact comes from a snapshot repo. InvSee++'s API jar is **vendored locally** under `libs/`
+> (see `libs/README.md`) rather than pulled from its usual Repsy repo, which now requires
+> authentication for every request. Note the InvSee++ compile dependency is separate from the
+> server-side InvSee++ *plugin*, which must be v0.31.15+ to load on 26.2 at all — see
+> Requirements above.
 
 ## Setup
 
@@ -74,7 +71,7 @@ load. (This is the most common setup mistake — the plugin appears "installed" 
 - **InvSeePlusPlus (InvSee++)** — for GUI inventory-edit logging.
 - **CoreProtect**, **EssentialsX**, **Enchants Squared** — the plugins whose commands are watched
   (no build dependency; only needed if you use those features).
-- **DiscordSRVStaffLogger** — build it (see above) and drop `DiscordSRVStaffLogger-1.0.0.jar` in.
+- **DiscordSRVStaffLogger** — build it (see above) and drop `DiscordSRVStaffLogger-1.4.0.jar` in.
 
 Restart the server (a full stop/start, not `/reload`) and run `/plugins` to confirm each is
 loaded (green). DiscordSRVStaffLogger logs a line per integration on enable, e.g.

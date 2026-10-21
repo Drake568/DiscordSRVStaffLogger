@@ -37,9 +37,12 @@
             <id>codemc</id>
             <url>https://repo.codemc.io/repository/maven-public/</url>
         </repository>
+        <!-- repo.repsy.io/mvn/jannyboy11/minecraft (InvSee++'s publish target) now requires auth for
+             every request, including anonymous metadata reads - see libs/README.md. InvSee++ is
+             vendored locally instead. -->
         <repository>
-            <id>jannyboy11-repsy</id>
-            <url>https://repo.repsy.io/mvn/jannyboy11/minecraft</url>
+            <id>vendored-libs</id>
+            <url>file://${project.basedir}/libs</url>
         </repository>
     </repositories>
 
@@ -70,11 +73,12 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- InvSee++ API interfaces (SpectatorInventory / EnderSpectatorInventory) live in _common -->
+        <!-- InvSee++ API interfaces (SpectatorInventory / EnderSpectatorInventory) live in _common.
+             Vendored locally under libs/ - see libs/README.md for why and how to update it. -->
         <dependency>
             <groupId>com.janboerman.invsee</groupId>
             <artifactId>invsee-plus-plus_common</artifactId>
-            <version>0.31.1-SNAPSHOT</version>
+            <version>0.31.22</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

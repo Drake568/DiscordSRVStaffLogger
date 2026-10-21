@@ -17,9 +17,10 @@ Actions captured:
 4. **Item add/remove on another player's inventory** — `/give` & `/clear` commands (only when
    targeting another player), plus InvSee++ GUI edits (per-click diff, with item name/lore/enchants).
 
-Staff members can be exempted from every action type via `ignored-staff` (username list) or
-`ignore-ops`/`ignore-console` in `config.yml`. `/staffloggerreload` (alias `/dslreload`,
-permission `discordsrvstafflogger.reload`) applies config edits without restarting the server.
+Staff members can be exempted from action types 2-4 via `ignored-staff` (username list) or
+`ignore-ops`/`ignore-console` in `config.yml` - these exemptions never apply to bans/mutes (1).
+`/staffloggerreload` (alias `/dslreload`, permission `discordsrvstafflogger.reload`) applies
+config edits without restarting the server.
 
 ## Build
 
@@ -30,7 +31,7 @@ JDK 21 (or lower) **cannot** compile against it — confirmed locally: compiling
 
 Standard:
 ```bash
-mvn clean package    # -> target/DiscordSRVStaffLogger-1.3.0.jar
+mvn clean package    # -> target/DiscordSRVStaffLogger-1.4.0.jar
 ```
 
 Standalone Maven is available on this dev machine via `sdkman` (`mvn` on `PATH`, Apache Maven
@@ -39,11 +40,6 @@ Standalone Maven is available on this dev machine via `sdkman` (`mvn` on `PATH`,
 ```bash
 JAVA_HOME=/opt/homebrew/opt/openjdk@25 mvn -B -ntp clean package
 ```
-
-**Expected benign noise:** the build prints `[ERROR]`/`[WARNING]` lines about
-`invsee-plus-plus_common`'s `systemPath` for `BungeePerms`/`UltraPermissionsAPI`. These come from
-InvSee++'s own published POM, don't affect our compile, and the build still reports `BUILD SUCCESS`.
-Filter with `| grep -v systemPath` when checking output.
 
 There is **no test suite**; a successful compile is the only automated check. Real verification
 requires a live Paper 26.2 server with the integration plugins installed (see README checklist) —
@@ -54,6 +50,7 @@ to load on 26.2 (see the "Dependency versions" section below).
 
 ```
 pom.xml                                  Java 25, all integrations `provided` (never shaded)
+libs/                                     vendored local Maven repo (InvSee++ API jar - see libs/README.md)
 src/main/resources/plugin.yml            softdepend on all integration plugins; version filtered from pom;
                                           declares /staffloggerreload + its permission node
 src/main/resources/config.yml            toggles, permission nodes, command keyword lists, watch list,
@@ -112,7 +109,9 @@ plugin only disables its path (with a one-time warning) rather than breaking the
   on close. A session with no clicks (or a net-zero delta) isn't logged. Items are keyed by full
   identity (ItemStack cloned to amount 1) so name/lore/enchants are tracked distinctly and rendered
   via Adventure's `PlainTextComponentSerializer`.
-- API classes live in the `invsee-plus-plus_common` artifact.
+- API classes live in the `invsee-plus-plus_common` artifact, which is **vendored locally** under
+  `libs/` (see `libs/README.md`) rather than pulled from Repsy - that repo now requires auth for
+  every request, including anonymous metadata reads.
 
 **Command detection** (`CommandListener`)
 - Listens at `EventPriority.MONITOR`, `ignoreCancelled = true`. Handles both
@@ -152,8 +151,9 @@ do **not** appear in an existing server's config. Behavior depends on the reader
 
 Paper `26.2.build.121-stable` (re-check papermc's maven-metadata.xml for the newest `*-stable`
 build before bumping further), DiscordSRV `1.30.5`, LiteBans API `0.6.1`, InvSee++
-`0.31.1-SNAPSHOT` (Repsy; compile-time API only — the server's InvSee++ *plugin* separately
-needs v0.31.15+ to load on 26.2). CoreProtect's latest stable release (v24.0) has open reports
+`0.31.22` (vendored locally under `libs/`, re-packaged from the public GitHub Release jar since
+Repsy now requires auth - see `libs/README.md`; compile-time API only — the server's InvSee++
+*plugin* separately needs v0.31.15+ to load on 26.2). CoreProtect's latest stable release (v24.0) has open reports
 of failing to load on 26.2 ([PlayPro/CoreProtect#919](https://github.com/PlayPro/CoreProtect/issues/919));
 this plugin has no compile dependency on it (command-string matching only in `CommandListener`),
 so it's an operational caveat, not a code concern. Verify latest against each repo before
