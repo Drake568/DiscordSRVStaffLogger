@@ -6,7 +6,7 @@
 
     <groupId>com.discordsrvstafflogger</groupId>
     <artifactId>discordsrvstafflogger</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
     <packaging>jar</packaging>
     <name>DiscordSRVStaffLogger</name>
     <description>Logs sensitive staff actions to a Discord channel via DiscordSRV.</description>
