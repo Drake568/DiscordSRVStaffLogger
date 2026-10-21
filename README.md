@@ -8,7 +8,7 @@ only sink.
 
 | # | Action | How it's detected |
 |---|--------|-------------------|
-| 1 | A staff member **bans** or **unbans** a player | LiteBans API (`entryAdded` / `entryRemoved`) — structured staff/target/reason/duration, logged exactly once |
+| 1 | A staff member **bans**, **unbans**, **mutes**, or **unmutes** a player | LiteBans API (`entryAdded` / `entryRemoved`) — structured staff/target/reason/duration, logged exactly once, and **always logged regardless of `ignore-ops`/`ignore-console`/`ignored-staff`** |
 | 2 | A staff member runs a **CoreProtect rollback / undo** | `/co rollback`, `/co rb`, `/co undo` (configurable bases/subcommands) |
 | 3 | A staff member **enchants** an item | `/enchant`, and Enchants Squared `/es enchant\|give\|remove` |
 | 4 | A staff member **adds/removes items from another player's inventory** | `/give` & `/clear` commands (only when targeting *another* player) **and** live edits through the InvSee++ GUI (net add/remove per session, including item name/lore/enchants) |
@@ -21,7 +21,7 @@ Failed no-permission command attempts are not logged (configurable per action).
 - **Server:** Paper **26.2** (runs on **Java 25**).
 - **Plugins on the server** (each is optional; a missing one just disables its path with a warning):
   - **DiscordSRV** — required for anything to be posted.
-  - **LiteBans** — for ban logging.
+  - **LiteBans** — for ban/mute logging.
   - **InvSeePlusPlus (InvSee++)** — for GUI inventory-edit logging. **Needs v0.31.15+ on 26.2** —
     older InvSee++ builds fail to load on 26.2 (the compile-time API this project uses is
     unaffected).
@@ -70,7 +70,7 @@ load. (This is the most common setup mistake — the plugin appears "installed" 
 `/plugins`.)
 
 - **DiscordSRV** — required for anything to be posted.
-- **LiteBans** — for ban/unban logging.
+- **LiteBans** — for ban/unban/mute/unmute logging.
 - **InvSeePlusPlus (InvSee++)** — for GUI inventory-edit logging.
 - **CoreProtect**, **EssentialsX**, **Enchants Squared** — the plugins whose commands are watched
   (no build dependency; only needed if you use those features).
@@ -102,10 +102,10 @@ Make sure the DiscordSRV bot has **View Channel**, **Send Messages**, and **Embe
 channel. If the name isn't mapped, DiscordSRVStaffLogger warns
 `DiscordSRV has no channel mapped to "staff-log"...` and skips — a clear signal to fix the mapping.
 
-### 4. Make LiteBans the ban authority (for exactly-once ban logging)
-Ban logging reads LiteBans' events, which only fire for bans that go through LiteBans. With
-EssentialsX also installed, disable its ban commands so every ban/unban flows through LiteBans —
-in `plugins/Essentials/config.yml`:
+### 4. Make LiteBans the ban/mute authority (for exactly-once logging)
+Ban/mute logging reads LiteBans' events, which only fire for actions that go through LiteBans.
+With EssentialsX also installed, disable its ban/mute commands so everything flows through
+LiteBans — in `plugins/Essentials/config.yml`:
 ```yaml
 disabled-commands:
 - ban
@@ -113,6 +113,9 @@ disabled-commands:
 - banip
 - unbanip
 - tempban
+- mute
+- unmute
+- tempmute
 ```
 Then full-restart and verify LiteBans owns `/ban` (compare `/ban` and `/litebans:ban` output).
 (This is the standard LiteBans setup.)
@@ -124,6 +127,10 @@ Then full-restart and verify LiteBans owns `/ban` (compare `/ban` and `/litebans
 - **ignore console / command-block actions** (`ignore-console: true`),
 - **exempt specific staff by name** (`ignored-staff: [YourName]`) — never logged, even if
   `ignore-ops` is off and they're op,
+
+  > **Bans/unbans/mutes/unmutes always log**, regardless of `ignore-ops`, `ignore-console`, or
+  > `ignored-staff` — those exemptions only apply to commands and InvSee++ edits.
+
 - set the permission nodes that gate each command action (`commands.permissions.*`),
 - edit the matched command bases/subcommands/aliases (`commands.rollback`, `commands.enchant`, …),
 - add extra commands to log generically (`commands.watch`).
@@ -143,6 +150,7 @@ Discord embed appears:
 
 - `/ban <player> <reason>` → **Player Banned** (staff / target / reason / duration).
 - `/unban <player>` → **Player Unbanned**.
+- `/mute <player> <reason>` → **Player Muted**; `/unmute <player>` → **Player Unmuted**.
 - `/co rollback u:<player> t:1h` → **CoreProtect Rollback**; `/co undo` → **CoreProtect Undo**.
 - `/enchant <player> sharpness 5` → **Item Enchanted**; `/es enchant …` → **Item Enchanted**.
 - `/give <otherplayer> diamond 64` → **Inventory Changed (command)**; `/give <yourself> ...`

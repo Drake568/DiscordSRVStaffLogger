@@ -26,6 +26,8 @@ public final class DiscordNotifier {
     // Palette per action.
     public static final Color BAN_COLOR       = new Color(0xE74C3C); // red
     public static final Color UNBAN_COLOR     = new Color(0x2ECC71); // green
+    public static final Color MUTE_COLOR      = new Color(0x9B59B6); // purple
+    public static final Color UNMUTE_COLOR    = new Color(0x3498DB); // blue
     public static final Color ROLLBACK_COLOR  = new Color(0xE67E22); // orange
     public static final Color ENCHANT_COLOR   = new Color(0x1ABC9C); // aqua
     public static final Color INVENTORY_COLOR = new Color(0xF1C40F); // gold

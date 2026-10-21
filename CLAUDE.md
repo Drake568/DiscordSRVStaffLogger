@@ -9,7 +9,9 @@ A Paper (Minecraft server) plugin that logs sensitive **staff actions** to a Dis
 via **DiscordSRV**. Deliberately **no log file and no database** — Discord is the only sink.
 
 Actions captured:
-1. **Bans / unbans** — via the LiteBans API (`entryAdded` / `entryRemoved`).
+1. **Bans / unbans / mutes / unmutes** — via the LiteBans API (`entryAdded` / `entryRemoved`).
+   These four are logged **unconditionally** — `ignore-ops`, `ignore-console`, and
+   `ignored-staff` do not apply to them, unlike every other action type below.
 2. **CoreProtect rollback / undo** — `/co rollback`, `/co rb`, `/co undo` (command detection).
 3. **Enchanting** — `/enchant`, and Enchants Squared `/es enchant|give|remove` (command detection).
 4. **Item add/remove on another player's inventory** — `/give` & `/clear` commands (only when
@@ -61,7 +63,7 @@ src/main/java/com/discordsrvstafflogger/
                                                      tear down every listener from config, so /staffloggerreload
                                                      can re-run them cleanly; onCommand() handles the reload
   DiscordNotifier.java                    builds JDA embeds, resolves the DiscordSRV channel, sends
-  listener/BanListener.java               LiteBans Events.Listener (ban + unban)
+  listener/LiteBansListener.java           LiteBans Events.Listener (ban + unban + mute + unmute)
   listener/CommandListener.java           PlayerCommandPreprocessEvent + ServerCommandEvent
   listener/InventoryEditListener.java     InvSee++ spectator-inventory per-click diff
 ```
@@ -84,13 +86,17 @@ plugin only disables its path (with a one-time warning) rather than breaking the
 - Compile-time DiscordSRV version should match the server's so the relocated JDA classes line up.
   A runtime `NoSuchMethodError`/`NoClassDefFoundError` mentioning `jda` means version skew.
 
-**LiteBans** (`BanListener`)
-- Ban logging is the single source of truth: `entryAdded` (filter `"ban".equals(getType())`) and
-  `entryRemoved` for unbans. Events fire **async**; `Bukkit.getOfflinePlayer(UUID)` is a local
-  cache lookup so no main-thread hop is needed.
-- "Log exactly once" depends on **LiteBans owning the ban commands** — the server must disable
-  EssentialsX `/ban`/`/tempban`/`/banip` (via Essentials `disabled-commands`). Native Essentials
-  bans do not reach LiteBans and would not be logged. This is a server-config prerequisite, not code.
+**LiteBans** (`LiteBansListener`)
+- Ban/mute logging is the single source of truth: `entryAdded` (filter on `getType()` being
+  `"ban"` or `"mute"`) and `entryRemoved` for unbans/unmutes. Events fire **async**;
+  `Bukkit.getOfflinePlayer(UUID)` is a local cache lookup so no main-thread hop is needed.
+- "Log exactly once" depends on **LiteBans owning the ban/mute commands** — the server must
+  disable EssentialsX `/ban`/`/tempban`/`/banip`/`/mute`/`/tempmute` (via Essentials
+  `disabled-commands`). Native Essentials bans/mutes do not reach LiteBans and would not be
+  logged. This is a server-config prerequisite, not code.
+- These four entry types bypass every exemption (`ignore-ops`, `ignore-console`,
+  `ignored-staff`) by design — `LiteBansListener` has no knowledge of them at all. If asked to
+  make bans/mutes respect an exemption again, that's a deliberate behavior change, not a bug fix.
 - Unregister the listener in `onDisable`.
 
 **InvSee++** (`InventoryEditListener`)
@@ -136,8 +142,8 @@ plugin only disables its path (with a one-time warning) rather than breaking the
 
 `config.yml` is written only on first run (`saveDefaultConfig`). New keys added to the default file
 do **not** appear in an existing server's config. Behavior depends on the reader:
-- Absent key -> code default applies (e.g. `log.unbans`, the `enchant.subcommand-bases` default `es`
-  both work without editing an old config).
+- Absent key -> code default applies (e.g. `log.unbans`, `log.mutes`/`log.unmutes`, and the
+  `enchant.subcommand-bases` default `es` all work without editing an old config).
 - Present-but-outdated key -> the old value **overrides** the new default (e.g. adding `undo` to the
   default `rollback.subcommands` did nothing for servers whose config already listed `[rollback, rb]`;
   they had to add `undo` or regenerate). Always tell the user which case applies for a given change.

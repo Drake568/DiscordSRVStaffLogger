@@ -1,8 +1,8 @@
 package com.discordsrvstafflogger;
 
-import com.discordsrvstafflogger.listener.BanListener;
 import com.discordsrvstafflogger.listener.CommandListener;
 import com.discordsrvstafflogger.listener.InventoryEditListener;
+import com.discordsrvstafflogger.listener.LiteBansListener;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * (via DiscordSRV). No log file and no database - Discord is the only sink.
  *
  * <ol>
- *   <li>Bans (via the LiteBans API)</li>
+ *   <li>Bans and mutes (via the LiteBans API)</li>
  *   <li>CoreProtect rollbacks (command)</li>
  *   <li>Enchanting items with /enchant (command)</li>
  *   <li>Adding/removing items from another player's inventory (give/clear commands + InvSee++ GUI)</li>
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 public final class DiscordSRVStaffLogger extends JavaPlugin {
 
     private DiscordNotifier notifier;
-    private BanListener banListener;
+    private LiteBansListener liteBansListener;
     private CommandListener commandListener;
     private InventoryEditListener inventoryEditListener;
 
@@ -90,16 +90,18 @@ public final class DiscordSRVStaffLogger extends JavaPlugin {
             }
         }
 
-        // 1 - bans and unbans via LiteBans.
+        // 1 - bans, unbans, mutes, and unmutes via LiteBans.
         boolean logBans = config.getBoolean("log.bans", true);
         boolean logUnbans = config.getBoolean("log.unbans", true);
-        if (logBans || logUnbans) {
+        boolean logMutes = config.getBoolean("log.mutes", true);
+        boolean logUnmutes = config.getBoolean("log.unmutes", true);
+        if (logBans || logUnbans || logMutes || logUnmutes) {
             if (pm.getPlugin("LiteBans") != null) {
-                banListener = new BanListener(this, notifier, logBans, logUnbans);
-                banListener.register();
-                getLogger().info("Hooked into LiteBans - ban/unban logging active.");
+                liteBansListener = new LiteBansListener(this, notifier, logBans, logUnbans, logMutes, logUnmutes);
+                liteBansListener.register();
+                getLogger().info("Hooked into LiteBans - ban/mute logging active.");
             } else {
-                getLogger().warning("LiteBans not found - ban/unban logging disabled.");
+                getLogger().warning("LiteBans not found - ban/mute logging disabled.");
             }
         }
 
@@ -116,9 +118,9 @@ public final class DiscordSRVStaffLogger extends JavaPlugin {
             HandlerList.unregisterAll(inventoryEditListener);
             inventoryEditListener = null;
         }
-        if (banListener != null) {
-            banListener.unregister();
-            banListener = null;
+        if (liteBansListener != null) {
+            liteBansListener.unregister();
+            liteBansListener = null;
         }
     }
 
