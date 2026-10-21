@@ -45,7 +45,7 @@ This targets Paper 26.2, whose API is compiled to **Java 25 bytecode**, so you n
 mvn clean package
 ```
 
-The built jar is `target/DiscordSRVStaffLogger-1.4.0.jar`. Drop it in your server's `plugins/` folder.
+The built jar is `target/DiscordSRVStaffLogger-1.4.1.jar`. Drop it in your server's `plugins/` folder.
 
 > Dependency versions are pinned in `pom.xml` (Paper `26.2.build.121-stable` — re-check papermc's
 > maven-metadata.xml for the latest `*-stable` build before bumping further — DiscordSRV
@@ -71,7 +71,7 @@ load. (This is the most common setup mistake — the plugin appears "installed" 
 - **InvSeePlusPlus (InvSee++)** — for GUI inventory-edit logging.
 - **CoreProtect**, **EssentialsX**, **Enchants Squared** — the plugins whose commands are watched
   (no build dependency; only needed if you use those features).
-- **DiscordSRVStaffLogger** — build it (see above) and drop `DiscordSRVStaffLogger-1.4.0.jar` in.
+- **DiscordSRVStaffLogger** — build it (see above) and drop `DiscordSRVStaffLogger-1.4.1.jar` in.
 
 Restart the server (a full stop/start, not `/reload`) and run `/plugins` to confirm each is
 loaded (green). DiscordSRVStaffLogger logs a line per integration on enable, e.g.
